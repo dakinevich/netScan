@@ -1,0 +1,51 @@
+version: '0.13'
+
+services:
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "5001:5001"
+    environment:
+      APP_URL: http://host.docker.internal:5000
+
+  bd:
+    build: ./bd_container
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./bd_container/database_traffic.sql:/docker-entrypoint-initdb.d/database_traffic.sql
+    ports:
+      - "3306:3306"
+
+  control_container:
+    build: ./control_container
+    ports:
+      - "5000:5000"
+    environment:
+      APP_URL: http://host.docker.internal:5000
+
+  traffic-capture:
+    build: ./traffic_capture
+    environment:
+      APP_URL: http://host.docker.internal:5000
+
+  anomaly_detector:
+    build: ./anomaly_detector
+    volumes:
+      - checkpoints_volume:/app/checkpoints_volume
+    ports:
+      - "5002:5002"
+    environment:
+      APP_URL: http://host.docker.internal:5000
+
+  model_training:
+    build: ./model_training
+    volumes:
+      - checkpoints_volume:/app/checkpoints_volume
+    ports:
+      - "5003:5003"
+    environment:
+      APP_URL: http://host.docker.internal:5000
+
+volumes:
+  checkpoints_volume:
